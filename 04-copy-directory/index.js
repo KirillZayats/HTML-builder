@@ -4,8 +4,8 @@ const path = require('path');
 async function addData(pathFolder, pathFolderCopy) {
   fs.readdir(pathFolder, { withFileTypes: true }).then((files) => {
     files.forEach((file) => {
-      const pathFile = `${pathFolder}\\${file.name}`;
-      const pathFileCopy = `${pathFolderCopy}\\${file.name}`;
+      const pathFile = path.join(pathFolder, file.name);
+      const pathFileCopy = path.join(pathFolderCopy, file.name);
       if (file.isFile()) {
         fs.copyFile(pathFile, pathFileCopy);
       } else {

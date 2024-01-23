@@ -2,10 +2,13 @@ const fsPromises = require('fs/promises');
 const fs = require('fs');
 const path = require('path');
 
-const nameDist = 'project-dist';
-const nameAssets = 'assets';
-
 const folderFrom = '';
+const nameAssets = 'assets';
+const pathDist = path.join(__dirname, 'project-dist');
+const pathDistAssets = path.join(pathDist, nameAssets);
+const pathAssets = path.join(__dirname, nameAssets);
+const pathDefault = path.join(__dirname, folderFrom);
+
 const folderComponents = 'components';
 const extnameHtml = '.html';
 const nameHtmlFrom = 'template.html';
@@ -16,13 +19,11 @@ const nameStyle = 'style';
 const nameFolderStyle = 'styles';
 
 const copyFile = async (pathFrom, pathTo) => {
-  const fullPathFrom = path.join(__dirname, pathFrom);
-  const fullPathTo = path.join(__dirname, pathTo);
   const startCopy = (fullPathFrom, fullPathTo) => {
     fsPromises.readdir(fullPathFrom, { withFileTypes: true }).then((files) => {
       files.forEach((file) => {
-        const pathFileFrom = `${fullPathFrom}\\${file.name}`;
-        const pathFileTo = `${fullPathTo}\\${file.name}`;
+        const pathFileFrom = path.join(fullPathFrom, file.name);
+        const pathFileTo = path.join(fullPathTo, file.name);
         if (file.isFile()) {
           fsPromises.copyFile(pathFileFrom, pathFileTo);
         } else {
@@ -32,11 +33,10 @@ const copyFile = async (pathFrom, pathTo) => {
       });
     });
   };
-  startCopy(fullPathFrom, fullPathTo);
+  startCopy(pathFrom, pathTo);
 };
 
-const createFolder = async (nameFolder) => {
-  const pathFolder = path.join(__dirname, nameFolder);
+const createFolder = async (pathFolder) => {
   try {
     await fsPromises.rm(pathFolder, { recursive: true, force: true });
     await fsPromises.mkdir(pathFolder, { recursive: true });
@@ -45,16 +45,14 @@ const createFolder = async (nameFolder) => {
   }
 };
 
-const buildStyle = (nameFile, extnameFile, fromFolder, toFolder) => {
-  const pathBuild = path.join(
-    __dirname,
-    `${toFolder}\\${nameFile}${extnameFile}`,
-  );
+const buildStyle = (nameFile, extnameFile, fromFolder, pathToFolter) => {
+  const pathBuild = path.join(pathToFolter, `${nameFile}${extnameFile}`);
   const writeStream = fs.createWriteStream(pathBuild);
   const pathFromFolder = path.join(__dirname, fromFolder);
+
   fsPromises.readdir(pathFromFolder, { withFileTypes: true }).then((files) => {
     files.forEach((file) => {
-      const fullName = `${pathFromFolder}\\${file.name}`;
+      const fullName = path.join(pathFromFolder, file.name);
       if (file.isFile() && fullName.includes(extnameFile)) {
         const readableStream = fs.createReadStream(fullName, 'utf8');
         readableStream.on('data', (chunk) => {
@@ -87,15 +85,12 @@ const createMapComponents = async (folderComponents, extname) => {
 const buildHtml = async (
   nameHtmlFrom,
   nameHtmlTo,
-  folderFrom,
-  folderTo,
+  pathFromFolder,
+  pathToFolder,
   folderComponents,
 ) => {
-  const pathDefaultFile = path.join(
-    __dirname,
-    `${folderFrom}\\${nameHtmlFrom}`,
-  );
-  const pathBuild = path.join(__dirname, `${folderTo}\\${nameHtmlTo}`);
+  const pathDefaultFile = path.join(pathFromFolder, nameHtmlFrom);
+  const pathBuild = path.join(pathToFolder, nameHtmlTo);
   const writeStream = fs.createWriteStream(pathBuild);
   const mapComponents = await createMapComponents(
     folderComponents,
@@ -109,15 +104,15 @@ const buildHtml = async (
 };
 
 const build = async () => {
-  await createFolder(nameDist);
-  await createFolder(`${nameDist}\\${nameAssets}`);
-  await copyFile(nameAssets, `${nameDist}\\${nameAssets}`);
-  await buildStyle(nameStyle, extnameCss, nameFolderStyle, nameDist);
+  await createFolder(pathDist);
+  await createFolder(pathDistAssets);
+  await copyFile(pathAssets, pathDistAssets);
+  await buildStyle(nameStyle, extnameCss, nameFolderStyle, pathDist);
   await buildHtml(
     nameHtmlFrom,
     nameHtmlTo,
-    folderFrom,
-    nameDist,
+    pathDefault,
+    pathDist,
     folderComponents,
   );
 };
